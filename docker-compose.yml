@@ -10,3 +10,4 @@ services:
 
 volumes:
   glb2vrm-data:
+    name: glb2vrm-data
