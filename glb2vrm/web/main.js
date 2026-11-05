@@ -283,6 +283,14 @@ function addMarkers(helper, list, mapped = null, colorMapped = 0x4bf0b6) {
 
 function buildHelper(root) {
   const helper = new THREE.SkeletonHelper(root);
+  // SkeletonHelper stores bone positions relative to `root` but takes
+  // `root.matrixWorld` as its own matrix, which is only correct when the helper
+  // is added to the scene. As a child of `root` that applies the root transform
+  // twice, so a 180° turn (applyFacing / rotateVRM0) becomes 360° and the rig
+  // stays facing the old way while the mesh turns around. Give the helper its
+  // own identity local matrix instead; then it renders exactly at the bones.
+  helper.matrixAutoUpdate = true;
+  helper.matrix = new THREE.Matrix4();
   helper.material.depthTest = false;
   helper.material.transparent = true;
   helper.material.opacity = 0.85;
