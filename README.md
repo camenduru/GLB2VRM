@@ -174,6 +174,13 @@ python convert/fbx2pmx.py "model.fbx" -o "model.pmx"     # other formats → PMX
 python tools/qa/check_vrm.py "model.vrm"                 # validate a VRM (structure + official schema)
 ```
 
+## GLB to VRM UI
+
+For a rigged GLB, `GLB2VRM.bat` (or `python glb2vrm/server.py`) opens a separate local UI:
+it maps the skeleton to the VRM humanoid (with editable slot mapping), converts through the
+same pipeline, previews the result, and plays `.vrma` animations on it. See
+[glb2vrm/README.md](glb2vrm/README.md).
+
 ## FAQ
 
 <details>

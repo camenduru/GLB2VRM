@@ -1,0 +1,34 @@
+.git
+.gitignore
+.github
+.venv
+venv
+__pycache__
+**/__pycache__
+*.py[cod]
+build
+dist
+
+# never ship local models, conversions, test fixtures or screenshots
+examples
+glb2vrm/data
+tests
+docs
+assets
+
+# node/build leftovers for the other UIs
+**/node_modules
+ui/web
+ui/app.py
+ui/server.py
+ui/version.py
+ui/icon.ico
+ui/viewer/viewer-core.js
+
+# QA harness (check_vrm.py itself is needed)
+tools/qa/harness
+tools/qa/.schema-cache
+
+# editors
+.vscode
+.idea

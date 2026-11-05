@@ -29,3 +29,6 @@ edits/
 .vscode/
 .idea/
 .claude/launch.json
+
+# GLB2VRM uploads and conversion outputs
+glb2vrm/data/

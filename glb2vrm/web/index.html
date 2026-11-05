@@ -1,0 +1,167 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>GLB2VRM &middot; rigged GLB to VRM</title>
+    <link rel="stylesheet" href="/style.css" />
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "/vendor/three/three.module.min.js",
+          "three/addons/": "/vendor/three/addons/",
+          "@pixiv/three-vrm": "/vendor/three-vrm/three-vrm.module.min.js",
+          "@pixiv/three-vrm-animation": "/vendor/three-vrm-animation/three-vrm-animation.module.min.js"
+        }
+      }
+    </script>
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="brand">
+        <span class="mark"></span>
+        <div>
+          <h1>GLB2VRM</h1>
+          <p>rigged GLB &rarr; VRM avatar</p>
+        </div>
+      </div>
+      <div class="pill" id="status-pill"><span class="dot"></span><span id="status-text">checking Blender</span></div>
+    </header>
+
+    <main>
+      <section class="panel source">
+        <h2>1 &middot; model</h2>
+        <div class="scroll">
+          <div id="drop" class="drop">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v10m0-10 3.5 3.5M12 3 8.5 6.5M5 14v4a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <strong>Drop a rigged .glb here</strong>
+            <span>or click to choose a file</span>
+          </div>
+          <input id="file" type="file" accept=".glb,.vrm,model/gltf-binary" hidden />
+          <div class="row">
+            <button id="btn-add" type="button">Add model&hellip;</button>
+            <button id="btn-remove" type="button" class="ghost">Remove</button>
+          </div>
+          <ul id="models" class="clips"></ul>
+
+          <div id="info" class="info" hidden>
+            <div class="info-head">
+              <strong id="info-name"></strong>
+              <span id="info-size" class="muted"></span>
+            </div>
+            <div class="meta-grid" id="info-grid"></div>
+            <div id="info-warn" class="note warn" hidden></div>
+          </div>
+
+          <details class="options-box" open>
+            <summary>Convert options</summary>
+            <div class="field">
+              <label>Target</label>
+              <div class="seg" id="spec-seg">
+                <button type="button" data-v="vrm1" class="on">VRM 1.0</button>
+                <button type="button" data-v="vrm0">VRM 0.x</button>
+              </div>
+            </div>
+            <label class="check">
+              <input id="opt-tpose" type="checkbox" checked />
+              <span>Raise A-pose arms to the VRM T-pose</span>
+            </label>
+            <label class="check">
+              <input id="opt-spring" type="checkbox" checked />
+              <span>Add spring bones from hair / skirt names</span>
+            </label>
+            <div class="field">
+              <label>Texture size</label>
+              <select id="opt-tex">
+                <option value="0">original</option>
+                <option value="4096">4096</option>
+                <option value="2048">2048</option>
+                <option value="1024">1024</option>
+              </select>
+            </div>
+            <label class="check">
+              <input id="opt-jpeg" type="checkbox" />
+              <span>Store opaque textures as JPEG</span>
+            </label>
+            <label class="check">
+              <input id="opt-face180" type="checkbox" />
+              <span>Extra 180&deg; turn (model faces backwards)</span>
+            </label>
+            <div class="field">
+              <label for="opt-title">Title</label>
+              <input id="opt-title" type="text" placeholder="model name" />
+            </div>
+            <div class="field">
+              <label for="opt-author">Author</label>
+              <input id="opt-author" type="text" placeholder="unknown" />
+            </div>
+          </details>
+
+          <details class="mapping" id="mapping-box" open>
+            <summary>
+              Humanoid mapping
+              <span id="map-count" class="count">0/22</span>
+              <button id="btn-automap" type="button" class="mini">Auto</button>
+            </summary>
+            <p class="note" id="map-note"></p>
+            <div id="map-list" class="map-list"></div>
+          </details>
+        </div>
+
+        <div class="foot">
+          <button id="btn-run" type="button" class="primary" disabled>Convert to VRM</button>
+          <div class="progress"><span id="bar"></span></div>
+          <p class="phase" id="phase">drop a rigged GLB to begin</p>
+        </div>
+      </section>
+
+      <section class="panel viewer">
+        <div class="viewer-head">
+          <h2>2 &middot; preview</h2>
+          <div class="row tight">
+            <div class="seg small" id="view-seg">
+              <button type="button" data-v="glb" class="on">GLB</button>
+              <button type="button" data-v="vrm" disabled>VRM</button>
+            </div>
+            <button id="btn-bones" type="button" class="ghost active">Bones</button>
+            <button id="btn-vrma" type="button" class="ghost" disabled title="Play a VRM Animation (.vrma) on the generated avatar">Play .vrma&hellip;</button>
+            <input id="vrma-file" type="file" accept=".vrma,model/gltf-binary" hidden />
+          </div>
+        </div>
+        <div class="stage" id="stage">
+          <canvas id="scene"></canvas>
+          <div class="stage-hint" id="stage-hint" hidden>Drop a .vrma to play it on this VRM, or a .glb to load a model</div>
+        </div>
+        <div class="anim" id="anim" hidden>
+          <div class="anim-head">
+            <button id="btn-anim-play" type="button" class="ghost" title="Play / pause">Pause</button>
+            <span id="anim-name" class="anim-name">&mdash;</span>
+            <span class="spacer"></span>
+            <span id="anim-time" class="muted">0:00 / 0:00</span>
+            <button id="btn-anim-clear" type="button" class="mini">Clear</button>
+          </div>
+          <input id="anim-seek" type="range" min="0" max="1" step="0.001" value="0" aria-label="Animation position" />
+        </div>
+        <div class="result" id="result" hidden>
+          <div class="result-main">
+            <strong id="result-title">VRM ready</strong>
+            <span id="result-meta" class="muted"></span>
+          </div>
+          <a id="download" class="download primary" href="#" download>Download .vrm</a>
+        </div>
+        <details class="log" id="log-box" hidden>
+          <summary>Conversion log</summary>
+          <pre id="log"></pre>
+        </details>
+      </section>
+    </main>
+
+    <p class="hint">
+      Drop a skinned GLB with bones. The skeleton is matched to the VRM humanoid on the right
+      &mdash; correct any slot in Humanoid mapping &mdash; then Convert to VRM. Blender is used
+      only as the glTF importer; the VRM is written by VRMify's own converter.
+    </p>
+
+    <script type="module" src="/main.js"></script>
+  </body>
+</html>
