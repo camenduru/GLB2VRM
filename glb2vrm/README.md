@@ -39,6 +39,34 @@ The conversion is the same pipeline used for `examples/test.glb`, so a GLB
 with a humanoid skeleton comes out as a valid VRM 1.0 avatar in a T-pose, with
 its textures and materials converted to MToon.
 
+## Docker
+
+The repository root has a `Dockerfile` that installs Blender 4.5.1 LTS and the
+app's optional Python packages, so the host does not need Blender.
+
+```bash
+docker build -t camenduru/glb2vrm:latest .
+docker run -d --name glb2vrm --restart unless-stopped \
+  -p 8020:8020 \
+  -v glb2vrm-data:/app/glb2vrm/data \
+  camenduru/glb2vrm:latest
+```
+
+Then open <http://127.0.0.1:8020>. The named volume keeps uploaded models and
+converted VRMs across container restarts. `docker compose up -d --build` does
+the same via [docker-compose.yml](../docker-compose.yml).
+
+Notes:
+
+* Docker repository names are lowercase, so the image is
+  `camenduru/glb2vrm` (not `GLB2VRM`).
+* Blender's Linux build is x86-64. On Apple Silicon add
+  `--platform linux/amd64` to both `docker build` and `docker run`; the image
+  runs under emulation.
+* The image includes Blender, `jsonschema` (for the official VRM schema check)
+  and Pillow (texture resizing/JPEG). The VRM JSON schemas are cached at build
+  time, so validation works without internet access at runtime.
+
 ## Requirements
 
 * Python 3.10+ (the app itself uses only the standard library).

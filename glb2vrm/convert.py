@@ -54,8 +54,31 @@ def _blender_versions(paths):
     return found
 
 
+_BLENDER_CACHE = None
+
+
+def _probe_blender_version(path):
+    """Ask Blender for its version (paths like /usr/local/bin/blender have none)."""
+    try:
+        proc = subprocess.run(
+            [str(path), "--version"],
+            stdin=subprocess.DEVNULL, capture_output=True, text=True,
+            encoding="utf-8", errors="replace", timeout=15,
+            creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0) if os.name == "nt" else 0,
+        )
+        match = re.search(r"Blender\s+(\d+)\.(\d+)", (proc.stdout or "") + (proc.stderr or ""))
+        if match:
+            return (int(match.group(1)), int(match.group(2)))
+    except (OSError, subprocess.SubprocessError):
+        pass
+    return (0, 0)
+
+
 def find_blender():
     """Locate Blender. Prefers a 4.x build (the pipeline was verified on 4.5)."""
+    global _BLENDER_CACHE
+    if _BLENDER_CACHE is not None:
+        return _BLENDER_CACHE
     candidates = []
     for env in ("GLB2VRM_BLENDER", "BLENDER_EXE", "BLENDER"):
         value = os.environ.get(env)
@@ -81,7 +104,13 @@ def find_blender():
         return None
     fours = [item for item in versions if item[0][0] == 4]
     version, path = fours[-1] if fours else versions[-1]
-    return {"path": str(path), "version": f"{version[0]}.{version[1]}" if version[0] else "?"}
+    if version == (0, 0):
+        version = _probe_blender_version(path)
+    _BLENDER_CACHE = {
+        "path": str(path),
+        "version": f"{version[0]}.{version[1]}" if version[0] else "?",
+    }
+    return _BLENDER_CACHE
 
 
 def status():

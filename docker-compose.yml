@@ -1,0 +1,12 @@
+services:
+  glb2vrm:
+    build: .
+    image: camenduru/glb2vrm:latest
+    ports:
+      - "8020:8020"
+    volumes:
+      - glb2vrm-data:/app/glb2vrm/data
+    restart: unless-stopped
+
+volumes:
+  glb2vrm-data:
